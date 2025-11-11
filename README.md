@@ -40,11 +40,14 @@ An AI-powered FastAPI service that uses OpenAI GPT-4 to automatically classify c
 ## 🚀 Quick Start with Docker
 
 ### Prerequisites
+
 - Docker
 - OpenAI API key
 
 ### Environment Setup
+
 Create a `.env` file with your OpenAI API key:
+
 ```bash
 OPENAI_API_KEY=your_openai_api_key_here
 ```
@@ -52,27 +55,34 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### Docker Commands
 
 #### Development Stage
+
 Run with hot reload and development features:
+
 ```bash
 docker build --target development -t ticket-classifier:dev .
 docker run -p 8000:8000 --env-file .env -v ${PWD}/src:/app/src ticket-classifier:dev
 ```
 
 #### Testing Stage
+
 Run unit tests inside the container:
+
 ```bash
 docker build --target testing -t ticket-classifier:test .
 docker run --rm --env-file .env ticket-classifier:test
 ```
 
 #### Production Stage
+
 Build and run the optimized production container:
+
 ```bash
 docker build --target production -t ticket-classifier:prod .
 docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 ```
 
 ### Access the API
+
 - **API**: http://localhost:8000
 - **Documentation**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/health
@@ -80,6 +90,7 @@ docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 ## 📚 API Endpoints
 
 ### Main Endpoints
+
 - `POST /classify` - Classify a single ticket
 - `POST /classify/batch` - Classify multiple tickets
 - `GET /health` - Health check
@@ -88,6 +99,7 @@ docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 - `GET /docs` - Interactive API documentation
 
 ### Example Request
+
 ```json
 {
   "ticket_id": "T001",
@@ -99,6 +111,7 @@ docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 ```
 
 ### Example Response
+
 ```json
 {
   "ticket_id": "T001",
@@ -112,17 +125,19 @@ docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 ## 🧪 Testing
 
 ### Run Tests with Docker
+
 ```bash
-# Run all 74 unit tests
+# Run all 74 unit tests (tests run automatically during build)
 docker build --target testing -t ticket-classifier:test .
-docker run --rm --env-file .env ticket-classifier:test
 
 # Run tests with coverage report
-docker run --rm --env-file .env ticket-classifier:test pytest --cov=src --cov-report=term-missing
+docker run --rm ticket-classifier:test pytest --cov=src --cov-report=html
 ```
 
 ### Local Development (Optional)
+
 If you prefer local development:
+
 ```bash
 # Set up virtual environment
 python -m venv venv
@@ -139,6 +154,7 @@ pytest
 This application is optimized for Azure Container Apps or Azure App Service.
 
 ### Azure Container Apps Example
+
 ```bash
 # Build and push to Azure Container Registry
 az acr build --registry myregistry --image ticket-classifier:latest .
@@ -156,15 +172,17 @@ az containerapp create \
 ## ⚙️ Configuration
 
 ### Required Environment Variables
+
 - `OPENAI_API_KEY` - Your OpenAI API key (required)
 
 ### Optional Environment Variables
+
 - `OPENAI_MODEL` - OpenAI model (default: `gpt-4`)
 - `ENVIRONMENT` - Environment: development/production/testing
 - `LOG_LEVEL` - Logging level (default: `INFO`)
 - `MAX_BATCH_SIZE` - Maximum tickets per batch (default: `100`)
 - `MAX_CONCURRENT_REQUESTS` - Concurrent OpenAI requests (default: `10`)
 
-##  License
+## License
 
 This project is licensed under the MIT License.
