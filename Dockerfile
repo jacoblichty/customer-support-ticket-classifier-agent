@@ -1,5 +1,5 @@
 # Multi-stage Docker build for production deployment
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -18,15 +18,16 @@ RUN apt-get update && \
         build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Set work directory
+# Set work directory and change ownership
 WORKDIR /app
+RUN chown appuser:appuser /app
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Development stage
-FROM base as development
+FROM base AS development
 
 # Install development dependencies
 RUN pip install --no-cache-dir \
@@ -45,6 +46,9 @@ COPY --chown=appuser:appuser . .
 # Switch to non-root user
 USER appuser
 
+# Create logs directory as appuser
+RUN mkdir -p logs
+
 # Expose port
 EXPOSE 8000
 
@@ -52,18 +56,18 @@ EXPOSE 8000
 CMD ["python", "main.py", "--server", "--host", "0.0.0.0", "--port", "8000"]
 
 # Production stage
-FROM base as production
+FROM base AS production
 
 # Copy only necessary files
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser main.py .
 COPY --chown=appuser:appuser requirements.txt .
 
-# Create logs directory
-RUN mkdir -p logs && chown appuser:appuser logs
-
 # Switch to non-root user
 USER appuser
+
+# Create logs directory as appuser
+RUN mkdir -p logs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
@@ -76,14 +80,17 @@ EXPOSE 8000
 CMD ["python", "main.py", "--server", "--env", "production"]
 
 # Testing stage
-FROM development as testing
+FROM development AS testing
 
 # Copy test files
 COPY --chown=appuser:appuser tests/ ./tests/
 COPY --chown=appuser:appuser pyproject.toml .
 
-# Run tests
-RUN python -m pytest tests/ -v --cov=src --cov-report=term-missing
+# Switch to non-root user for tests
+USER appuser
+
+# Run tests with cache disabled to eliminate warnings
+RUN python -m pytest tests/ -v --tb=short -p no:cacheprovider -p no:stepwise
 
 # Default to production stage
 FROM development
