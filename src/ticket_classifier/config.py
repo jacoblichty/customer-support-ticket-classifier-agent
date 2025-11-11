@@ -3,8 +3,8 @@ Configuration management for the ticket classifier system.
 """
 
 import os
-from typing import Optional, List
-from pydantic import Field, validator
+from typing import Optional, List, Union
+from pydantic import Field, field_validator, AliasChoices
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -15,48 +15,47 @@ class Settings(BaseSettings):
     # API Configuration
     app_name: str = "Customer Support Ticket Classifier API"
     app_version: str = "1.0.0"
-    debug: bool = Field(default=False, env="DEBUG")
+    debug: bool = Field(default=False)
     
     # Server Configuration
-    host: str = Field(default="0.0.0.0", env="HOST")
-    port: int = Field(default=8000, env="PORT")
-    workers: int = Field(default=1, env="WORKERS")
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8000)
+    workers: int = Field(default=1)
     
     # OpenAI Configuration
-    openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    openai_model: str = Field(default="gpt-4", env="OPENAI_MODEL")
-    openai_temperature: float = Field(default=0.3, env="OPENAI_TEMPERATURE")
-    openai_max_tokens: int = Field(default=200, env="OPENAI_MAX_TOKENS")
-    openai_timeout: float = Field(default=30.0, env="OPENAI_TIMEOUT")
-    openai_max_retries: int = Field(default=3, env="OPENAI_MAX_RETRIES")
+    openai_api_key: Optional[str] = Field(default=None)
+    openai_model: str = Field(default="gpt-4")
+    openai_temperature: float = Field(default=0.3)
+    openai_max_tokens: int = Field(default=200)
+    openai_timeout: float = Field(default=30.0)
+    openai_max_retries: int = Field(default=3)
     
     # Rate Limiting
-    rate_limit_requests: int = Field(default=100, env="RATE_LIMIT_REQUESTS")
-    rate_limit_window: int = Field(default=60, env="RATE_LIMIT_WINDOW")  # seconds
+    rate_limit_requests: int = Field(default=100)
+    rate_limit_window: int = Field(default=60)  # seconds
     
     # Batch Processing
-    max_batch_size: int = Field(default=100, env="MAX_BATCH_SIZE")
-    max_concurrent_requests: int = Field(default=10, env="MAX_CONCURRENT_REQUESTS")
+    max_batch_size: int = Field(default=100)
+    max_concurrent_requests: int = Field(default=10)
     
     # Logging Configuration
-    log_level: str = Field(default="INFO", env="LOG_LEVEL")
+    log_level: str = Field(default="INFO")
     log_format: str = Field(
-        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        env="LOG_FORMAT"
+        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    log_file: Optional[str] = Field(default="logs/app.log", env="LOG_FILE")
+    log_file: Optional[str] = Field(default="logs/app.log")
     
     # CORS Configuration
-    cors_origins: List[str] = Field(default=["*"], env="CORS_ORIGINS")
-    cors_methods: List[str] = Field(default=["*"], env="CORS_METHODS")
-    cors_headers: List[str] = Field(default=["*"], env="CORS_HEADERS")
+    cors_origins: Union[str, List[str]] = Field(default=["*"])
+    cors_methods: List[str] = Field(default=["*"])
+    cors_headers: List[str] = Field(default=["*"])
     
     # Monitoring
-    enable_metrics: bool = Field(default=True, env="ENABLE_METRICS")
-    metrics_path: str = Field(default="/metrics", env="METRICS_PATH")
+    enable_metrics: bool = Field(default=True)
+    metrics_path: str = Field(default="/metrics")
     
     # Database (for future use)
-    database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
+    database_url: Optional[str] = Field(default=None)
     
     # Ticket Categories
     ticket_categories: List[str] = Field(
@@ -68,30 +67,35 @@ class Settings(BaseSettings):
             "general_inquiry",
             "complaint",
             "refund_request"
-        ],
-        env="TICKET_CATEGORIES"
+        ]
     )
     
-    @validator("openai_temperature")
+    @field_validator("openai_temperature")
+    @classmethod
     def validate_temperature(cls, v):
         if not 0.0 <= v <= 2.0:
             raise ValueError("Temperature must be between 0.0 and 2.0")
         return v
     
-    @validator("log_level")
+    @field_validator("log_level")
+    @classmethod
     def validate_log_level(cls, v):
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
             raise ValueError(f"Log level must be one of: {valid_levels}")
         return v.upper()
     
-    @validator("cors_origins", pre=True)
+    @field_validator("cors_origins", mode="before")
+    @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        elif isinstance(v, list):
+            return [str(origin).strip() for origin in v if str(origin).strip()]
         return v
     
-    @validator("ticket_categories", pre=True)
+    @field_validator("ticket_categories", mode="before")
+    @classmethod
     def parse_ticket_categories(cls, v):
         if isinstance(v, str):
             return [cat.strip() for cat in v.split(",")]
@@ -137,8 +141,8 @@ class ProductionSettings(Settings):
     workers: int = 4
     
 
-class TestingSettings(Settings):
-    """Testing environment settings."""
+class UnitTestSettings(Settings):
+    """Unit testing environment settings."""
     debug: bool = True
     log_level: str = "DEBUG"
     openai_api_key: str = "test-key"
@@ -153,6 +157,6 @@ def get_environment_settings() -> Settings:
     if env == "production":
         return ProductionSettings()
     elif env == "testing":
-        return TestingSettings()
+        return UnitTestSettings()
     else:
         return DevelopmentSettings()

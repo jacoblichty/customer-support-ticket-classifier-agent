@@ -3,7 +3,6 @@ Test configuration and fixtures for the ticket classifier tests.
 """
 
 import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock, Mock
 import sys
 from pathlib import Path
@@ -15,7 +14,7 @@ sys.path.insert(0, str(src_path))
 from ticket_classifier.models import SupportTicket
 from ticket_classifier.classifier import TicketClassifier
 from ticket_classifier.agent import TicketClassifierAgent
-from ticket_classifier.config import TestingSettings
+from ticket_classifier.config import UnitTestSettings
 
 
 @pytest.fixture
@@ -43,7 +42,7 @@ def sample_tickets():
 @pytest.fixture
 def test_settings():
     """Get test settings."""
-    return TestingSettings()
+    return UnitTestSettings()
 
 
 @pytest.fixture
@@ -56,8 +55,8 @@ def mock_openai_response():
     }
 
 
-@pytest_asyncio.fixture
-async def mock_openai_client(mock_openai_response):
+@pytest.fixture
+def mock_openai_client(mock_openai_response):
     """Create a mocked OpenAI client."""
     mock_client = AsyncMock()
     mock_response = Mock()
@@ -76,8 +75,8 @@ def classifier_with_mock_client(test_settings, mock_openai_client):
     return classifier
 
 
-@pytest_asyncio.fixture
-async def agent_with_mock_classifier(test_settings, classifier_with_mock_client):
+@pytest.fixture
+def agent_with_mock_classifier(test_settings, classifier_with_mock_client):
     """Create agent with mocked classifier."""
     agent = TicketClassifierAgent(settings=test_settings)
     agent.classifier = classifier_with_mock_client

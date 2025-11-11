@@ -3,7 +3,7 @@ Tests for the FastAPI application.
 """
 
 import pytest
-import pytest_asyncio
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch
 import sys
@@ -15,13 +15,35 @@ sys.path.insert(0, str(src_path))
 
 from ticket_classifier.api import create_app
 from ticket_classifier.models import TicketRequest, BatchTicketRequest
-from ticket_classifier.config import TestingSettings
+from ticket_classifier.config import UnitTestSettings
 
 
 @pytest.fixture
 def test_app():
     """Create test FastAPI app."""
-    app = create_app()
+    import time
+    from ticket_classifier.api import register_routes
+    
+    # Create app without lifespan for testing
+    settings = UnitTestSettings()
+    app = FastAPI(
+        title=settings.app_name,
+        description="Test app",
+        version=settings.app_version,
+    )
+    
+    # Add the same middleware as in the real app
+    @app.middleware("http")
+    async def add_process_time_header(request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    
+    # Register routes
+    register_routes(app)
+    
     return app
 
 
@@ -154,8 +176,15 @@ class TestAPIEndpoints:
         for i, ticket in enumerate(mock_tickets):
             ticket.to_response.return_value = {
                 "ticket_id": f"T00{i+1}",
+                "subject": f"Test {i+1}",
+                "content": f"Content {i+1}",
+                "customer_email": f"test{i+1}@example.com",
+                "priority": "medium",
                 "category": "technical_issue",
-                "confidence_score": 0.85
+                "confidence_score": 0.85,
+                "reasoning": "Test reasoning",
+                "created_at": "2025-11-11T10:00:00",
+                "processed_at": "2025-11-11T10:00:01"
             }
         
         async def mock_process_batch(tickets):
@@ -217,8 +246,10 @@ class TestAPIEndpoints:
         with patch('ticket_classifier.api.agent', mock_agent):
             response = client.post("/classify/batch", json=request_data)
         
-        assert response.status_code == 400
-        assert "exceeds maximum" in response.json()["detail"]
+        assert response.status_code == 422  # Pydantic validation error
+        response_data = response.json()
+        assert response_data["detail"][0]["type"] == "too_long"
+        assert "100 items" in response_data["detail"][0]["msg"]
     
     @patch('ticket_classifier.api.agent')
     def test_stats_endpoint(self, mock_agent_global, client, mock_agent):

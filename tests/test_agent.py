@@ -3,13 +3,12 @@ Tests for the TicketClassifierAgent class.
 """
 
 import pytest
-import pytest_asyncio
 from unittest.mock import Mock, AsyncMock, patch
 from datetime import datetime
 
 from ticket_classifier.agent import TicketClassifierAgent
 from ticket_classifier.models import SupportTicket
-from ticket_classifier.config import TestingSettings
+from ticket_classifier.config import UnitTestSettings
 
 
 class TestTicketClassifierAgent:
@@ -17,7 +16,7 @@ class TestTicketClassifierAgent:
     
     def test_init(self):
         """Test initializing the agent."""
-        settings = TestingSettings()
+        settings = UnitTestSettings()
         agent = TicketClassifierAgent(settings=settings)
         
         assert agent.settings == settings
@@ -25,7 +24,7 @@ class TestTicketClassifierAgent:
         assert len(agent.processed_tickets) == 0
         assert agent.startup_time > 0
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_process_ticket_success(self, agent_with_mock_classifier, sample_ticket):
         """Test successful ticket processing."""
         agent = agent_with_mock_classifier
@@ -38,7 +37,7 @@ class TestTicketClassifierAgent:
         assert processed_ticket.processed_at is not None
         assert len(agent.processed_tickets) == 1
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_process_ticket_exception(self, test_settings, sample_ticket):
         """Test ticket processing with classifier exception."""
         agent = TicketClassifierAgent(settings=test_settings)
@@ -58,7 +57,7 @@ class TestTicketClassifierAgent:
         assert processed_ticket.confidence_score == 0.1
         assert "Processing failed" in processed_ticket.reasoning
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_process_batch_success(self, agent_with_mock_classifier, sample_tickets):
         """Test successful batch processing."""
         agent = agent_with_mock_classifier
@@ -73,7 +72,7 @@ class TestTicketClassifierAgent:
             assert ticket.confidence_score is not None
             assert ticket.processed_at is not None
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_process_batch_empty_list(self, agent_with_mock_classifier):
         """Test processing empty batch."""
         agent = agent_with_mock_classifier
@@ -83,7 +82,7 @@ class TestTicketClassifierAgent:
         assert len(processed_tickets) == 0
         assert len(agent.processed_tickets) == 0
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_process_batch_exceeds_max_size(self, agent_with_mock_classifier):
         """Test batch processing with size exceeding limit."""
         agent = agent_with_mock_classifier
@@ -107,7 +106,7 @@ class TestTicketClassifierAgent:
         assert stats["total_processed"] == 0
         assert "uptime_seconds" in stats
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_get_statistics_with_data(self, agent_with_mock_classifier, sample_tickets):
         """Test getting statistics with processed tickets."""
         agent = agent_with_mock_classifier
@@ -172,7 +171,7 @@ class TestTicketClassifierAgent:
         recent = agent.get_recent_tickets(limit=5)
         assert len(recent) == 5
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_concurrent_processing(self, test_settings):
         """Test that batch processing handles concurrency correctly."""
         agent = TicketClassifierAgent(settings=test_settings)

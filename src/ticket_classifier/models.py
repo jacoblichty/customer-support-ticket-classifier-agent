@@ -61,7 +61,7 @@ class TicketResponse(BaseModel):
 
 class BatchTicketRequest(BaseModel):
     """API request model for batch ticket classification."""
-    tickets: List[TicketRequest] = Field(..., min_items=1, max_items=100)
+    tickets: List[TicketRequest] = Field(..., min_length=1, max_length=100)
 
     model_config = {
         "json_schema_extra": {

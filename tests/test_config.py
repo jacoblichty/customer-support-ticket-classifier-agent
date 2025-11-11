@@ -7,7 +7,7 @@ import os
 from unittest.mock import patch
 
 from ticket_classifier.config import (
-    Settings, TestingSettings, DevelopmentSettings, 
+    Settings, UnitTestSettings, DevelopmentSettings, 
     ProductionSettings, get_settings, get_environment_settings
 )
 
@@ -124,7 +124,7 @@ class TestEnvironmentSpecificSettings:
     
     def test_testing_settings(self):
         """Test testing environment settings."""
-        settings = TestingSettings()
+        settings = UnitTestSettings()
         
         assert settings.debug is True
         assert settings.log_level == "DEBUG"
@@ -150,7 +150,7 @@ class TestEnvironmentSpecificSettings:
         """Test getting testing settings."""
         with patch.dict(os.environ, {'ENVIRONMENT': 'testing'}):
             settings = get_environment_settings()
-            assert isinstance(settings, TestingSettings)
+            assert isinstance(settings, UnitTestSettings)
             assert settings.openai_api_key == "test-key"
     
     def test_get_environment_settings_default(self):

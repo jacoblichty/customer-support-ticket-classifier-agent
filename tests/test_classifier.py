@@ -3,12 +3,11 @@ Tests for the TicketClassifier class.
 """
 
 import pytest
-import pytest_asyncio
 from unittest.mock import Mock, AsyncMock, patch
 import json
 
 from ticket_classifier.classifier import TicketClassifier
-from ticket_classifier.config import TestingSettings
+from ticket_classifier.config import UnitTestSettings
 
 
 class TestTicketClassifier:
@@ -18,7 +17,7 @@ class TestTicketClassifier:
         """Test initializing classifier without API key."""
         classifier = TicketClassifier(api_key=None)
         assert classifier.client is None
-        assert classifier.categories == TestingSettings().ticket_categories
+        assert classifier.categories == UnitTestSettings().ticket_categories
     
     def test_init_with_api_key(self):
         """Test initializing classifier with API key."""
@@ -37,7 +36,7 @@ class TestTicketClassifier:
         assert "JSON format" in prompt
         assert "confidence_score" in prompt
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_ticket_with_openai_success(self, sample_ticket, mock_openai_client):
         """Test successful OpenAI classification."""
         classifier = TicketClassifier(api_key="test-key")
@@ -52,7 +51,7 @@ class TestTicketClassifier:
         # Verify OpenAI client was called
         mock_openai_client.chat.completions.create.assert_called_once()
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_ticket_with_openai_invalid_json(self, sample_ticket):
         """Test handling of invalid JSON response from OpenAI."""
         classifier = TicketClassifier(api_key="test-key")
@@ -68,7 +67,7 @@ class TestTicketClassifier:
         with pytest.raises(ValueError, match="Invalid JSON response"):
             await classifier.classify_ticket_with_openai(sample_ticket)
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_ticket_with_openai_invalid_category(self, sample_ticket):
         """Test handling of invalid category from OpenAI."""
         classifier = TicketClassifier(api_key="test-key")
@@ -91,7 +90,7 @@ class TestTicketClassifier:
         assert result["category"] == "general_inquiry"
         assert result["confidence_score"] == 0.5
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_ticket_openai_fallback(self, sample_ticket):
         """Test fallback to rule-based when OpenAI fails."""
         classifier = TicketClassifier(api_key="test-key")
@@ -108,15 +107,17 @@ class TestTicketClassifier:
         assert "confidence_score" in result
         assert "reasoning" in result
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_ticket_no_client(self, sample_ticket):
         """Test classification without OpenAI client."""
         classifier = TicketClassifier(api_key=None)
         
         result = await classifier.classify_ticket(sample_ticket)
         
-        assert result["category"] == "general_inquiry"
-        assert result["confidence_score"] == 0.5
+        # The sample ticket has "Test Issue" as subject, which contains "issue" keyword
+        # so it should be classified as technical_issue by rule-based classifier
+        assert result["category"] == "technical_issue"
+        assert result["confidence_score"] > 0.5
         assert "rule-based" in result["reasoning"].lower()
     
     def test_rule_based_classification_technical_issue(self):
@@ -170,7 +171,7 @@ class TestTicketClassifier:
         assert result["category"] == "general_inquiry"
         assert result["confidence_score"] == 0.5
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_batch(self, sample_tickets):
         """Test batch classification."""
         classifier = TicketClassifier(api_key=None)
@@ -183,7 +184,7 @@ class TestTicketClassifier:
             assert "confidence_score" in result
             assert "reasoning" in result
     
-    @pytest_asyncio.async_test
+    @pytest.mark.asyncio
     async def test_classify_batch_with_exception(self, sample_tickets):
         """Test batch classification handling exceptions."""
         classifier = TicketClassifier(api_key="test-key")

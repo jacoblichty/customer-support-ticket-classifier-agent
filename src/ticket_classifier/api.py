@@ -79,174 +79,174 @@ def create_app() -> FastAPI:
         response.headers["X-Process-Time"] = str(process_time)
         return response
     
+    # Register routes
+    register_routes(app)
+    
     return app
 
 
-app = create_app()
-
-
-@app.get("/", tags=["Root"])
-async def root():
-    """Root endpoint with API information."""
-    settings = get_settings()
-    return {
-        "message": settings.app_name,
-        "version": settings.app_version,
-        "timestamp": datetime.now().isoformat(),
-        "endpoints": {
-            "classify": "/classify - Classify a single ticket",
-            "classify_batch": "/classify/batch - Classify multiple tickets",
-            "health": "/health - Health check",
-            "stats": "/stats - Get processing statistics",
-            "categories": "/categories - Get available categories"
+def register_routes(app: FastAPI):
+    """Register all routes with the FastAPI app."""
+    
+    @app.get("/", tags=["Root"])
+    async def root():
+        """Root endpoint with API information."""
+        settings = get_settings()
+        return {
+            "message": settings.app_name,
+            "version": settings.app_version,
+            "timestamp": datetime.now().isoformat(),
+            "endpoints": {
+                "classify": "/classify - Classify a single ticket",
+                "classify_batch": "/classify/batch - Classify multiple tickets",
+                "health": "/health - Health check",
+                "stats": "/stats - Get processing statistics",
+                "categories": "/categories - Get available categories"
+            }
         }
-    }
-
-
-@app.get("/health", response_model=HealthResponse, tags=["Health"])
-async def health_check():
-    """Health check endpoint."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
     
-    settings = get_settings()
-    health_status = agent.get_health_status()
-    
-    return HealthResponse(
-        status=health_status["status"],
-        openai_available=health_status["openai_available"],
-        timestamp=datetime.now(),
-        version=settings.app_version,
-        uptime_seconds=health_status["uptime_seconds"]
-    )
-
-
-@app.post("/classify", response_model=TicketResponse, tags=["Classification"])
-async def classify_ticket(ticket_request: TicketRequest):
-    """Classify a single support ticket."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
-    
-    try:
-        logger.info(f"Received classification request for ticket {ticket_request.ticket_id}")
+    @app.get("/health", response_model=HealthResponse, tags=["Health"])
+    async def health_check():
+        """Health check endpoint."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
         
-        # Convert request to ticket object
-        ticket = SupportTicket.from_request(ticket_request)
+        settings = get_settings()
+        health_status = agent.get_health_status()
         
-        # Process the ticket
-        processed_ticket = await agent.process_ticket(ticket)
-        
-        # Return response
-        return processed_ticket.to_response()
-        
-    except Exception as e:
-        logger.error(f"Error classifying ticket {ticket_request.ticket_id}: {e}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Classification error: {str(e)}"
+        return HealthResponse(
+            status=health_status["status"],
+            openai_available=health_status["openai_available"],
+            timestamp=datetime.now(),
+            version=settings.app_version,
+            uptime_seconds=health_status["uptime_seconds"]
         )
 
+    @app.post("/classify", response_model=TicketResponse, tags=["Classification"])
+    async def classify_ticket(ticket_request: TicketRequest):
+        """Classify a single support ticket."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
+        
+        try:
+            logger.info(f"Received classification request for ticket {ticket_request.ticket_id}")
+            
+            # Convert request to ticket object
+            ticket = SupportTicket.from_request(ticket_request)
+            
+            # Process the ticket
+            processed_ticket = await agent.process_ticket(ticket)
+            
+            # Return response
+            return processed_ticket.to_response()
+            
+        except Exception as e:
+            logger.error(f"Error classifying ticket {ticket_request.ticket_id}: {e}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Classification error: {str(e)}"
+            )
 
-@app.post("/classify/batch", response_model=BatchTicketResponse, tags=["Classification"])
-async def classify_tickets_batch(batch_request: BatchTicketRequest):
-    """Classify multiple support tickets in batch."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
-    
-    settings = get_settings()
-    
-    # Validate batch size
-    if len(batch_request.tickets) > settings.max_batch_size:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Batch size {len(batch_request.tickets)} exceeds maximum {settings.max_batch_size}"
-        )
-    
-    try:
-        logger.info(f"Received batch classification request for {len(batch_request.tickets)} tickets")
-        start_time = time.time()
+    @app.post("/classify/batch", response_model=BatchTicketResponse, tags=["Classification"])
+    async def classify_tickets_batch(batch_request: BatchTicketRequest):
+        """Classify multiple support tickets in batch."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
         
-        # Convert requests to ticket objects
-        tickets = [SupportTicket.from_request(req) for req in batch_request.tickets]
+        settings = get_settings()
         
-        # Process the batch
-        processed_tickets = await agent.process_batch(tickets)
+        # Validate batch size
+        if len(batch_request.tickets) > settings.max_batch_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Batch size {len(batch_request.tickets)} exceeds maximum {settings.max_batch_size}"
+            )
         
-        # Get statistics
-        stats = agent.get_statistics()
-        processing_time = time.time() - start_time
+        try:
+            logger.info(f"Received batch classification request for {len(batch_request.tickets)} tickets")
+            start_time = time.time()
+            
+            # Convert requests to ticket objects
+            tickets = [SupportTicket.from_request(req) for req in batch_request.tickets]
+            
+            # Process the batch
+            processed_tickets = await agent.process_batch(tickets)
+            
+            # Get statistics
+            stats = agent.get_statistics()
+            processing_time = time.time() - start_time
+            
+            # Return response
+            return BatchTicketResponse(
+                processed_tickets=[ticket.to_response() for ticket in processed_tickets],
+                statistics=stats,
+                processing_time_seconds=round(processing_time, 3)
+            )
+            
+        except ValueError as e:
+            logger.error(f"Validation error in batch processing: {e}")
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Batch classification error: {str(e)}"
+            )
+
+    @app.get("/stats", tags=["Statistics"])
+    async def get_statistics():
+        """Get processing statistics."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
         
-        # Return response
-        return BatchTicketResponse(
-            processed_tickets=[ticket.to_response() for ticket in processed_tickets],
-            statistics=stats,
-            processing_time_seconds=round(processing_time, 3)
-        )
+        return agent.get_statistics()
+
+    @app.get("/categories", tags=["Configuration"])
+    async def get_categories():
+        """Get available ticket categories with descriptions."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
         
-    except ValueError as e:
-        logger.error(f"Validation error in batch processing: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error processing batch: {e}")
-        raise HTTPException(
+        return {
+            "categories": agent.classifier.categories,
+            "descriptions": {
+                "technical_issue": "Problems with software, hardware, bugs, errors, system not working",
+                "billing_inquiry": "Questions about charges, payments, invoices, billing cycles",
+                "account_management": "Login issues, password resets, account settings, profile changes",
+                "feature_request": "Requests for new features, enhancements, suggestions for improvement",
+                "general_inquiry": "General questions, information requests, how-to questions",
+                "complaint": "Expressions of dissatisfaction, complaints about service or product",
+                "refund_request": "Requests for money back, returns, cancellations for refund"
+            }
+        }
+
+    @app.get("/recent", tags=["Statistics"])
+    async def get_recent_tickets(limit: int = 10):
+        """Get recently processed tickets."""
+        if not agent:
+            raise HTTPException(status_code=503, detail="Agent not initialized")
+        
+        if limit > 100:
+            raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
+        
+        recent_tickets = agent.get_recent_tickets(limit)
+        return {
+            "tickets": [ticket.to_response() for ticket in recent_tickets],
+            "count": len(recent_tickets)
+        }
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request, exc):
+        """Global exception handler."""
+        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        return JSONResponse(
             status_code=500,
-            detail=f"Batch classification error: {str(e)}"
+            content={"detail": "Internal server error"}
         )
 
 
-@app.get("/stats", tags=["Statistics"])
-async def get_statistics():
-    """Get processing statistics."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
-    
-    return agent.get_statistics()
-
-
-@app.get("/categories", tags=["Configuration"])
-async def get_categories():
-    """Get available ticket categories with descriptions."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
-    
-    return {
-        "categories": agent.classifier.categories,
-        "descriptions": {
-            "technical_issue": "Problems with software, hardware, bugs, errors, system not working",
-            "billing_inquiry": "Questions about charges, payments, invoices, billing cycles",
-            "account_management": "Login issues, password resets, account settings, profile changes",
-            "feature_request": "Requests for new features, enhancements, suggestions for improvement",
-            "general_inquiry": "General questions, information requests, how-to questions",
-            "complaint": "Expressions of dissatisfaction, complaints about service or product",
-            "refund_request": "Requests for money back, returns, cancellations for refund"
-        }
-    }
-
-
-@app.get("/recent", tags=["Statistics"])
-async def get_recent_tickets(limit: int = 10):
-    """Get recently processed tickets."""
-    if not agent:
-        raise HTTPException(status_code=503, detail="Agent not initialized")
-    
-    if limit > 100:
-        raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
-    
-    recent_tickets = agent.get_recent_tickets(limit)
-    return {
-        "tickets": [ticket.to_response() for ticket in recent_tickets],
-        "count": len(recent_tickets)
-    }
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    """Global exception handler."""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+# Create the global app instance
+app = create_app()
 
 
 def run_server(settings=None):
