@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
     setup_logging(settings)
     
     global agent
-    agent = TicketClassifierAgent(settings.openai_api_key, settings)
+    agent = TicketClassifierAgent(settings.azure_openai_api_key, settings.azure_openai_endpoint, settings)
     logger.info("Application started successfully")
     
     yield

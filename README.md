@@ -1,10 +1,10 @@
 # 🎫 Customer Support Ticket Classifier Agent
 
-An AI-powered FastAPI service that uses OpenAI GPT-4 to automatically classify customer support tickets into predefined categories, helping organizations improve response times and routing efficiency.
+An AI-powered FastAPI service that uses Azure OpenAI GPT-4 to automatically classify customer support tickets into predefined categories, helping organizations improve response times and routing efficiency.
 
 ## 🚀 Features
 
-- **🤖 AI-Powered Classification**: Uses OpenAI GPT-4 for intelligent ticket categorization
+- **🤖 AI-Powered Classification**: Uses Azure OpenAI GPT-4 for intelligent ticket categorization
 - **⚡ FastAPI REST API**: Production-ready API with automatic documentation
 - **🔄 Batch Processing**: Concurrent processing of multiple tickets
 - **🛡️ Fallback System**: Rule-based classification when AI is unavailable
@@ -42,14 +42,16 @@ An AI-powered FastAPI service that uses OpenAI GPT-4 to automatically classify c
 ### Prerequisites
 
 - Docker
-- OpenAI API key
+- Azure OpenAI resource with a deployed GPT-4 model
 
 ### Environment Setup
 
-Create a `.env` file with your OpenAI API key:
+Create a `.env` file with your Azure OpenAI configuration:
 
 ```bash
-OPENAI_API_KEY=your_openai_api_key_here
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key_here
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT_NAME=your-gpt4-deployment-name
 ```
 
 ### Docker Commands
@@ -173,15 +175,17 @@ az containerapp create \
 
 ### Required Environment Variables
 
-- `OPENAI_API_KEY` - Your OpenAI API key (required)
+- `AZURE_OPENAI_API_KEY` - Your Azure OpenAI API key (required)
+- `AZURE_OPENAI_ENDPOINT` - Your Azure OpenAI endpoint URL (required)
+- `AZURE_OPENAI_DEPLOYMENT_NAME` - Your deployed model name (required)
 
 ### Optional Environment Variables
 
-- `OPENAI_MODEL` - OpenAI model (default: `gpt-4`)
+- `AZURE_OPENAI_API_VERSION` - API version (default: `2024-02-15-preview`)
 - `ENVIRONMENT` - Environment: development/production/testing
 - `LOG_LEVEL` - Logging level (default: `INFO`)
 - `MAX_BATCH_SIZE` - Maximum tickets per batch (default: `100`)
-- `MAX_CONCURRENT_REQUESTS` - Concurrent OpenAI requests (default: `10`)
+- `MAX_CONCURRENT_REQUESTS` - Concurrent requests (default: `10`)
 
 ## License
 

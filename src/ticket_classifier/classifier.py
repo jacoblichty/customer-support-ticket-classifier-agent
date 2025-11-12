@@ -1,12 +1,12 @@
 """
-OpenAI-powered ticket classifier.
+Azure OpenAI-powered ticket classifier.
 """
 
 import json
 import logging
 from typing import Dict, Optional
 import asyncio
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI
 from .models import SupportTicket
 from .config import get_settings
 
@@ -14,20 +14,24 @@ logger = logging.getLogger(__name__)
 
 
 class TicketClassifier:
-    """OpenAI-powered classifier for categorizing support tickets."""
+    """Azure OpenAI-powered classifier for categorizing support tickets."""
     
-    def __init__(self, api_key: Optional[str] = None, settings=None):
+    def __init__(self, api_key: Optional[str] = None, endpoint: Optional[str] = None, settings=None):
         self.settings = settings or get_settings()
         self.categories = self.settings.ticket_categories
         
-        # Initialize OpenAI client
-        self.api_key = api_key or self.settings.openai_api_key
-        if not self.api_key:
-            logger.warning("No OpenAI API key provided. Falling back to rule-based classification.")
+        # Initialize Azure OpenAI client
+        self.api_key = api_key or self.settings.azure_openai_api_key
+        self.endpoint = endpoint or self.settings.azure_openai_endpoint
+        
+        if not self.api_key or not self.endpoint:
+            logger.warning("No Azure OpenAI API key or endpoint provided. Falling back to rule-based classification.")
             self.client = None
         else:
-            self.client = AsyncOpenAI(
+            self.client = AsyncAzureOpenAI(
                 api_key=self.api_key,
+                azure_endpoint=self.endpoint,
+                api_version=self.settings.azure_openai_api_version,
                 timeout=self.settings.openai_timeout,
                 max_retries=self.settings.openai_max_retries
             )
@@ -65,7 +69,8 @@ For each ticket, you should:
 3. Provide a confidence score (0.0 to 1.0)
 4. Give a brief reasoning for your classification
 
-Respond in JSON format with the following structure:
+IMPORTANT: You must respond with ONLY valid JSON in the exact format below. Do not include any text before or after the JSON.
+
 {{
     "category": "category_name",
     "confidence_score": 0.85,
@@ -76,12 +81,14 @@ Category definitions:
 {definitions_str}
 
 Always choose the most specific and appropriate category based on the primary intent of the ticket.
-If you're unsure, use "general_inquiry" with a lower confidence score."""
+If you're unsure, use "general_inquiry" with a lower confidence score.
+
+Remember: Return ONLY the JSON object, nothing else."""
     
-    async def classify_ticket_with_openai(self, ticket: SupportTicket) -> Dict:
-        """Classify ticket using OpenAI API."""
+    async def classify_ticket_with_azure_openai(self, ticket: SupportTicket) -> Dict:
+        """Classify ticket using Azure OpenAI API."""
         if not self.client:
-            raise ValueError("OpenAI client not initialized")
+            raise ValueError("Azure OpenAI client not initialized")
         
         user_message = f"""Subject: {ticket.subject}
 Content: {ticket.content}
@@ -89,10 +96,10 @@ Priority: {ticket.priority}
 Customer: {ticket.customer_email}"""
         
         try:
-            logger.debug(f"Sending ticket {ticket.ticket_id} to OpenAI for classification")
+            logger.debug(f"Sending ticket {ticket.ticket_id} to Azure OpenAI for classification")
             
             response = await self.client.chat.completions.create(
-                model=self.settings.openai_model,
+                model=self.settings.azure_openai_deployment_name,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": user_message}
@@ -101,12 +108,21 @@ Customer: {ticket.customer_email}"""
                 max_tokens=self.settings.openai_max_tokens
             )
             
+            # Get the response content
+            response_content = response.choices[0].message.content
+            logger.debug(f"Azure OpenAI raw response for ticket {ticket.ticket_id}: {response_content}")
+            
+            # Check if response is empty or None
+            if not response_content or not response_content.strip():
+                logger.warning(f"Azure OpenAI returned empty response for ticket {ticket.ticket_id}")
+                raise ValueError("Empty response from Azure OpenAI")
+            
             # Parse the JSON response
-            result = json.loads(response.choices[0].message.content)
+            result = json.loads(response_content.strip())
             
             # Validate the response
             if result["category"] not in self.categories:
-                logger.warning(f"OpenAI returned invalid category: {result['category']}")
+                logger.warning(f"Azure OpenAI returned invalid category: {result['category']}")
                 result["category"] = "general_inquiry"
                 result["confidence_score"] = 0.5
                 result["reasoning"] = "Invalid category returned, defaulted to general_inquiry"
@@ -114,21 +130,22 @@ Customer: {ticket.customer_email}"""
             # Ensure confidence score is within valid range
             result["confidence_score"] = max(0.0, min(1.0, result["confidence_score"]))
             
-            logger.debug(f"OpenAI classified ticket {ticket.ticket_id} as {result['category']} "
+            logger.debug(f"Azure OpenAI classified ticket {ticket.ticket_id} as {result['category']} "
                         f"with confidence {result['confidence_score']}")
             
             return result
             
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse OpenAI response as JSON: {e}")
-            raise ValueError("Invalid JSON response from OpenAI")
+            logger.error(f"Failed to parse Azure OpenAI response as JSON for ticket {ticket.ticket_id}: {e}")
+            logger.error(f"Raw response content: {response_content}")
+            raise ValueError("Invalid JSON response from Azure OpenAI")
         except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
+            logger.error(f"Azure OpenAI API error for ticket {ticket.ticket_id}: {e}")
             raise
     
     async def classify_ticket(self, ticket: SupportTicket) -> Dict:
         """
-        Classify a support ticket using OpenAI or fallback to rule-based.
+        Classify a support ticket using Azure OpenAI or fallback to rule-based.
         
         Args:
             ticket: SupportTicket object to classify
@@ -138,9 +155,9 @@ Customer: {ticket.customer_email}"""
         """
         if self.client:
             try:
-                return await self.classify_ticket_with_openai(ticket)
+                return await self.classify_ticket_with_azure_openai(ticket)
             except Exception as e:
-                logger.warning(f"OpenAI classification failed for ticket {ticket.ticket_id}: {e}. "
+                logger.warning(f"Azure OpenAI classification failed for ticket {ticket.ticket_id}: {e}. "
                               "Using fallback classification.")
                 return self._rule_based_classification(ticket)
         else:

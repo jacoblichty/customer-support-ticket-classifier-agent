@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class TicketClassifierAgent:
-    """Main agent for processing support tickets with OpenAI integration."""
+    """Main agent for processing support tickets with Azure OpenAI integration."""
     
-    def __init__(self, openai_api_key: Optional[str] = None, settings=None):
+    def __init__(self, api_key: Optional[str] = None, endpoint: Optional[str] = None, settings=None):
         self.settings = settings or get_settings()
-        self.classifier = TicketClassifier(openai_api_key, self.settings)
+        self.classifier = TicketClassifier(api_key, endpoint, self.settings)
         self.processed_tickets = []
         self.startup_time = time.time()
         

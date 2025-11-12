@@ -22,9 +22,11 @@ class Settings(BaseSettings):
     port: int = Field(default=8000)
     workers: int = Field(default=1)
     
-    # OpenAI Configuration
-    openai_api_key: Optional[str] = Field(default=None)
-    openai_model: str = Field(default="gpt-4")
+    # Azure OpenAI Configuration
+    azure_openai_api_key: Optional[str] = Field(default=None)
+    azure_openai_endpoint: Optional[str] = Field(default=None)
+    azure_openai_api_version: str = Field(default="2024-02-15-preview")
+    azure_openai_deployment_name: str = Field(default="gpt-4")
     openai_temperature: float = Field(default=0.3)
     openai_max_tokens: int = Field(default=200)
     openai_timeout: float = Field(default=30.0)
@@ -106,8 +108,9 @@ class Settings(BaseSettings):
         "case_sensitive": False,
         "json_schema_extra": {
             "example": {
-                "openai_api_key": "sk-...",
-                "openai_model": "gpt-4",
+                "azure_openai_api_key": "your-azure-openai-key",
+                "azure_openai_endpoint": "https://your-resource.openai.azure.com/",
+                "azure_openai_deployment_name": "gpt-4",
                 "host": "0.0.0.0",
                 "port": 8000,
                 "debug": False,
@@ -144,7 +147,8 @@ class UnitTestSettings(Settings):
     """Unit testing environment settings."""
     debug: bool = True
     log_level: str = "DEBUG"
-    openai_api_key: str = "test-key"
+    azure_openai_api_key: str = "test-key"
+    azure_openai_endpoint: str = "https://test.openai.azure.com/"
     host: str = "127.0.0.1"
     port: int = 8001
 

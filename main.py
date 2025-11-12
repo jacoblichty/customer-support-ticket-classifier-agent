@@ -49,8 +49,8 @@ async def run_demo():
     setup_logging(settings)
     
     # Initialize agent
-    print(f"🤖 Initializing agent with OpenAI model: {settings.openai_model}")
-    agent = TicketClassifierAgent(settings.openai_api_key, settings)
+    print(f"🤖 Initializing agent with Azure OpenAI deployment: {settings.azure_openai_deployment_name}")
+    agent = TicketClassifierAgent(settings.azure_openai_api_key, settings.azure_openai_endpoint, settings)
     
     # Create sample tickets
     sample_tickets = create_sample_tickets()
@@ -143,7 +143,7 @@ Examples:
         print(f"🌐 Server will be available at: http://{settings.host}:{settings.port}")
         print(f"📚 API documentation at: http://{settings.host}:{settings.port}/docs")
         print(f"🔧 Environment: {os.getenv('ENVIRONMENT', 'development')}")
-        print(f"🤖 OpenAI available: {bool(settings.openai_api_key)}")
+        print(f"🤖 Azure OpenAI available: {bool(settings.azure_openai_api_key and settings.azure_openai_endpoint)}")
         
         run_server(settings)
     else:
@@ -155,7 +155,7 @@ Examples:
         print("  --help     Show detailed help and examples")
         print()
         print("Quick start:")
-        print("  1. Set OPENAI_API_KEY environment variable")
+        print("  1. Set AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT environment variables")
         print("  2. Run: python main.py --demo")
         print("  3. Or start server: python main.py --server")
 
