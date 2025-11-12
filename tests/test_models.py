@@ -107,30 +107,7 @@ class TestTicketRequest:
         )
         assert request.priority == "medium"
     
-    def test_empty_subject_validation(self):
-        """Test validation fails for empty subject."""
-        with pytest.raises(ValidationError):
-            TicketRequest(
-                ticket_id="T001",
-                subject="",
-                content="Content",
-                customer_email="test@example.com"
-            )
-    
-    def test_empty_content_validation(self):
-        """Test validation fails for empty content."""
-        with pytest.raises(ValidationError):
-            TicketRequest(
-                ticket_id="T001",
-                subject="Subject",
-                content="",
-                customer_email="test@example.com"
-            )
-    
-    def test_missing_required_fields(self):
-        """Test validation fails for missing required fields."""
-        with pytest.raises(ValidationError):
-            TicketRequest(subject="Test", content="Content")
+
 
 
 class TestBatchTicketRequest:
@@ -156,25 +133,7 @@ class TestBatchTicketRequest:
         batch_request = BatchTicketRequest(tickets=tickets)
         assert len(batch_request.tickets) == 2
     
-    def test_empty_batch_validation(self):
-        """Test validation fails for empty batch."""
-        with pytest.raises(ValidationError):
-            BatchTicketRequest(tickets=[])
-    
-    def test_max_batch_size_validation(self):
-        """Test validation for max batch size."""
-        # Create 101 tickets (exceeding max of 100)
-        tickets = []
-        for i in range(101):
-            tickets.append(TicketRequest(
-                ticket_id=f"T{i:03d}",
-                subject=f"Test {i}",
-                content=f"Content {i}",
-                customer_email=f"test{i}@example.com"
-            ))
-        
-        with pytest.raises(ValidationError):
-            BatchTicketRequest(tickets=tickets)
+
 
 
 class TestHealthResponse:

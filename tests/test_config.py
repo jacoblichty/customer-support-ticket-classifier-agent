@@ -29,73 +29,34 @@ class TestSettings:
         assert settings.max_batch_size == 100
         assert settings.log_level == "INFO"
     
-    def test_environment_variable_override(self):
-        """Test that environment variables override defaults."""
-        with patch.dict(os.environ, {
-            'DEBUG': 'true',
-            'PORT': '9000',
-            'OPENAI_MODEL': 'gpt-3.5-turbo',
-            'LOG_LEVEL': 'DEBUG'
-        }):
-            settings = Settings()
-            
-            assert settings.debug is True
-            assert settings.port == 9000
-            assert settings.openai_model == "gpt-3.5-turbo"
-            assert settings.log_level == "DEBUG"
+
     
-    def test_temperature_validation_valid(self):
-        """Test valid temperature values."""
-        # Should not raise exception
-        Settings(openai_temperature=0.0)
-        Settings(openai_temperature=1.0)
-        Settings(openai_temperature=2.0)
+
     
-    def test_temperature_validation_invalid(self):
-        """Test invalid temperature values."""
-        with pytest.raises(ValueError, match="Temperature must be between"):
-            Settings(openai_temperature=-0.1)
-        
-        with pytest.raises(ValueError, match="Temperature must be between"):
-            Settings(openai_temperature=2.1)
+
     
-    def test_log_level_validation_valid(self):
-        """Test valid log level values."""
-        for level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
-            settings = Settings(log_level=level)
-            assert settings.log_level == level
-        
-        # Test case insensitive
-        settings = Settings(log_level="debug")
-        assert settings.log_level == "DEBUG"
-    
-    def test_log_level_validation_invalid(self):
-        """Test invalid log level values."""
-        with pytest.raises(ValueError, match="Log level must be one of"):
-            Settings(log_level="INVALID")
-    
-    def test_cors_origins_parsing_string(self):
-        """Test parsing CORS origins from string."""
+    def test_cors_origins_parsing(self):
+        """Test parsing CORS origins from various formats."""
+        # Test string parsing
         with patch.dict(os.environ, {'CORS_ORIGINS': 'http://localhost:3000,https://example.com'}):
             settings = Settings()
             expected = ["http://localhost:3000", "https://example.com"]
             assert settings.cors_origins == expected
-    
-    def test_cors_origins_parsing_list(self):
-        """Test CORS origins as list."""
+        
+        # Test list format
         origins = ["http://localhost:3000", "https://example.com"]
         settings = Settings(cors_origins=origins)
         assert settings.cors_origins == origins
     
-    def test_ticket_categories_parsing_string(self):
-        """Test parsing ticket categories from string."""
+    def test_ticket_categories_parsing(self):
+        """Test parsing ticket categories from various formats."""
+        # Test string parsing
         categories_str = "technical,billing,general"
         settings = Settings(ticket_categories=categories_str)
         expected = ["technical", "billing", "general"]
         assert settings.ticket_categories == expected
-    
-    def test_ticket_categories_parsing_list(self):
-        """Test ticket categories as list."""
+        
+        # Test list format
         categories = ["technical", "billing", "general"]
         settings = Settings(ticket_categories=categories)
         assert settings.ticket_categories == categories

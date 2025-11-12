@@ -12,6 +12,9 @@ from functools import lru_cache
 class Settings(BaseSettings):
     """Application settings with validation."""
     
+    # Environment Configuration  
+    environment: str = Field(default="development")
+    
     # API Configuration
     app_name: str = "Customer Support Ticket Classifier API"
     app_version: str = "1.0.0"
@@ -32,6 +35,10 @@ class Settings(BaseSettings):
     openai_timeout: float = Field(default=30.0)
     openai_max_retries: int = Field(default=3)
     
+    # Legacy compatibility fields
+    openai_model: str = Field(default="gpt-4")  # Maps to azure_openai_deployment_name
+    openai_api_key: Optional[str] = Field(default=None)  # Maps to azure_openai_api_key
+    
     # Rate Limiting
     rate_limit_requests: int = Field(default=100)
     rate_limit_window: int = Field(default=60)  # seconds
@@ -50,6 +57,11 @@ class Settings(BaseSettings):
     cors_origins: Union[str, List[str]] = Field(default=["*"])
     cors_methods: List[str] = Field(default=["*"])
     cors_headers: List[str] = Field(default=["*"])
+    
+    # Intelligent Agent Configuration (always enabled)
+    intelligent_agent_learning: bool = Field(default=True)
+    max_context_gathering_time: int = Field(default=30)  # seconds
+    intelligent_confidence_threshold: float = Field(default=0.8)
     
     # Monitoring
     enable_metrics: bool = Field(default=True)
@@ -133,6 +145,9 @@ class DevelopmentSettings(Settings):
     log_level: str = "DEBUG"
     host: str = "127.0.0.1"
     workers: int = 1
+    
+    def __init__(self, **kwargs):
+        super().__init__(log_level="DEBUG", debug=True, host="127.0.0.1", workers=1, **kwargs)
 
 
 class ProductionSettings(Settings):
@@ -151,6 +166,19 @@ class UnitTestSettings(Settings):
     azure_openai_endpoint: str = "https://test.openai.azure.com/"
     host: str = "127.0.0.1"
     port: int = 8001
+    openai_api_key: str = "test-key"  # Legacy compatibility
+    
+    def __init__(self, **kwargs):
+        super().__init__(
+            log_level="DEBUG", 
+            debug=True, 
+            host="127.0.0.1", 
+            port=8001,
+            azure_openai_api_key="test-key",
+            azure_openai_endpoint="https://test.openai.azure.com/",
+            openai_api_key="test-key",
+            **kwargs
+        )
 
 
 def get_environment_settings() -> Settings:

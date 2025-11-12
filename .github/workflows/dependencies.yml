@@ -3,39 +3,39 @@ name: Dependency Updates
 on:
   schedule:
     # Run every Monday at 9 AM UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 jobs:
   update-dependencies:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-        
-    - name: Install pip-tools
-      run: pip install pip-tools
-      
-    - name: Update requirements
-      run: |
-        pip-compile --upgrade requirements.in
-        
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "chore: update dependencies"
-        title: "chore: update dependencies"
-        body: |
-          This PR updates the project dependencies to their latest versions.
-          
-          Please review the changes and ensure all tests pass before merging.
-        branch: update-dependencies
-        delete-branch: true
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Update requirements
+        run: |
+          pip-compile --upgrade requirements.in
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          body: |
+            This PR updates the project dependencies to their latest versions.
+
+            Please review the changes and ensure all tests pass before merging.
+          branch: update-dependencies
+          delete-branch: true

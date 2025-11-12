@@ -70,7 +70,7 @@ def mock_openai_client(mock_openai_response):
 @pytest.fixture
 def classifier_with_mock_client(test_settings, mock_openai_client):
     """Create classifier with mocked OpenAI client."""
-    classifier = TicketClassifier(api_key="test-key", settings=test_settings)
+    classifier = TicketClassifier(api_key="test-key", endpoint="test-endpoint", settings=test_settings)
     classifier.client = mock_openai_client
     return classifier
 

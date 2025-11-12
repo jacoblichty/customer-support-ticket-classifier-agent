@@ -97,8 +97,8 @@ def register_routes(app: FastAPI):
             "version": settings.app_version,
             "timestamp": datetime.now().isoformat(),
             "endpoints": {
-                "classify": "/classify - Classify a single ticket",
-                "classify_batch": "/classify/batch - Classify multiple tickets",
+                "process": "/process - Process and classify a single ticket",
+                "process_batch": "/process/batch - Process and classify multiple tickets",
                 "health": "/health - Health check",
                 "stats": "/stats - Get processing statistics",
                 "categories": "/categories - Get available categories"
@@ -122,34 +122,34 @@ def register_routes(app: FastAPI):
             uptime_seconds=health_status["uptime_seconds"]
         )
 
-    @app.post("/classify", response_model=TicketResponse, tags=["Classification"])
-    async def classify_ticket(ticket_request: TicketRequest):
-        """Classify a single support ticket."""
+    @app.post("/process", response_model=TicketResponse, tags=["Processing"])
+    async def process_ticket(ticket_request: TicketRequest):
+        """Process and classify a single support ticket with intelligent routing."""
         if not agent:
             raise HTTPException(status_code=503, detail="Agent not initialized")
         
         try:
-            logger.info(f"Received classification request for ticket {ticket_request.ticket_id}")
+            logger.info(f"Received processing request for ticket {ticket_request.ticket_id}")
             
             # Convert request to ticket object
             ticket = SupportTicket.from_request(ticket_request)
             
-            # Process the ticket
+            # Process the ticket with intelligent routing
             processed_ticket = await agent.process_ticket(ticket)
             
-            # Return response
+            # Return response with processing details
             return processed_ticket.to_response()
             
         except Exception as e:
-            logger.error(f"Error classifying ticket {ticket_request.ticket_id}: {e}")
+            logger.error(f"Error processing ticket {ticket_request.ticket_id}: {e}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"Classification error: {str(e)}"
+                detail=f"Processing error: {str(e)}"
             )
 
-    @app.post("/classify/batch", response_model=BatchTicketResponse, tags=["Classification"])
-    async def classify_tickets_batch(batch_request: BatchTicketRequest):
-        """Classify multiple support tickets in batch."""
+    @app.post("/process/batch", response_model=BatchTicketResponse, tags=["Processing"])
+    async def process_tickets_batch(batch_request: BatchTicketRequest):
+        """Process and classify multiple support tickets in batch with intelligent routing."""
         if not agent:
             raise HTTPException(status_code=503, detail="Agent not initialized")
         
@@ -163,20 +163,21 @@ def register_routes(app: FastAPI):
             )
         
         try:
-            logger.info(f"Received batch classification request for {len(batch_request.tickets)} tickets")
+            logger.info(f"Received batch processing request for {len(batch_request.tickets)} tickets")
             start_time = time.time()
             
-            # Convert requests to ticket objects
-            tickets = [SupportTicket.from_request(req) for req in batch_request.tickets]
-            
-            # Process the batch
-            processed_tickets = await agent.process_batch(tickets)
+            # Process each ticket individually to get intelligent routing details
+            processed_tickets = []
+            for req in batch_request.tickets:
+                ticket = SupportTicket.from_request(req)
+                processed_ticket = await agent.process_ticket(ticket)
+                processed_tickets.append(processed_ticket)
             
             # Get statistics
             stats = agent.get_statistics()
             processing_time = time.time() - start_time
             
-            # Return response
+            # Return response with processing details for each ticket
             return BatchTicketResponse(
                 processed_tickets=[ticket.to_response() for ticket in processed_tickets],
                 statistics=stats,
@@ -190,7 +191,7 @@ def register_routes(app: FastAPI):
             logger.error(f"Error processing batch: {e}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Batch classification error: {str(e)}"
+                detail=f"Batch processing error: {str(e)}"
             )
 
     @app.get("/stats", tags=["Statistics"])
