@@ -46,9 +46,6 @@ COPY --chown=appuser:appuser . .
 # Switch to non-root user
 USER appuser
 
-# Create logs directory as appuser
-RUN mkdir -p logs
-
 # Expose port
 EXPOSE 8000
 
@@ -65,9 +62,6 @@ COPY --chown=appuser:appuser requirements.txt .
 
 # Switch to non-root user
 USER appuser
-
-# Create logs directory as appuser
-RUN mkdir -p logs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \

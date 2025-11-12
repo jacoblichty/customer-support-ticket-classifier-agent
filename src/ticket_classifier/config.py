@@ -43,7 +43,6 @@ class Settings(BaseSettings):
     log_format: str = Field(
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
-    log_file: Optional[str] = Field(default="logs/app.log")
     
     # CORS Configuration
     cors_origins: Union[str, List[str]] = Field(default=["*"])
