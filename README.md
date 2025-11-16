@@ -5,12 +5,9 @@ An AI-powered FastAPI service that uses Azure OpenAI GPT-4 to automatically clas
 ## 🚀 Features
 
 - **🤖 AI-Powered Classification**: Uses Azure OpenAI GPT-4 for intelligent ticket categorization
-- **⚡ FastAPI REST API**: Production-ready API with automatic documentation
+- **⚡ FastAPI REST API**: Workload-ready API with automatic documentation
 - **🔄 Batch Processing**: Concurrent processing of multiple tickets
-- **🛡️ Fallback System**: Rule-based classification when AI is unavailable
 - ** Docker Support**: Multi-stage Docker builds optimized for Azure deployment
-- **🧪 Comprehensive Testing**: 74 unit tests with 100% pass rate
-- **📝 Structured Logging**: Production-ready logging with rotation
 
 ## 📋 Supported Categories
 
@@ -93,43 +90,19 @@ docker run -p 8000:8000 --env-file .env ticket-classifier:prod
 
 ### Main Endpoints
 
-- `POST /classify` - Classify a single ticket
-- `POST /classify/batch` - Classify multiple tickets
+- `POST /process` - Classify a single ticket
+- `POST /process/batch` - Classify multiple tickets
 - `GET /health` - Health check
 - `GET /stats` - Processing statistics
 - `GET /categories` - Available categories
 - `GET /docs` - Interactive API documentation
-
-### Example Request
-
-```json
-{
-  "ticket_id": "T001",
-  "subject": "Login Issue",
-  "content": "I can't log into my account",
-  "customer_email": "user@example.com",
-  "priority": "high"
-}
-```
-
-### Example Response
-
-```json
-{
-  "ticket_id": "T001",
-  "category": "account_management",
-  "confidence_score": 0.95,
-  "reasoning": "Keywords indicate account access issues",
-  "processed_at": "2025-11-11T10:30:01"
-}
-```
 
 ## 🧪 Testing
 
 ### Run Tests with Docker
 
 ```bash
-# Run all 74 unit tests (tests run automatically during build)
+# Run all unit tests (tests run automatically during build)
 docker build --target testing -t ticket-classifier:test .
 
 # Run tests with coverage report
