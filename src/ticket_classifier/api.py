@@ -173,14 +173,11 @@ def register_routes(app: FastAPI):
                 processed_ticket = await agent.process_ticket(ticket)
                 processed_tickets.append(processed_ticket)
             
-            # Get statistics
-            stats = agent.get_statistics()
             processing_time = time.time() - start_time
             
             # Return response with processing details for each ticket
             return BatchTicketResponse(
                 processed_tickets=[ticket.to_response() for ticket in processed_tickets],
-                statistics=stats,
                 processing_time_seconds=round(processing_time, 3)
             )
             

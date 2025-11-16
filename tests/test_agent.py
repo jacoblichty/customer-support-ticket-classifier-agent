@@ -40,7 +40,6 @@ class TestTicketClassifierAgent:
         # Check intelligent processing metadata
         assert hasattr(processed_ticket, 'metadata')
         assert 'classification_method' in processed_ticket.metadata
-        assert 'ai_characteristics' in processed_ticket.metadata
     
     @pytest.mark.asyncio
     async def test_process_ticket_exception(self, test_settings, sample_ticket):
@@ -127,10 +126,6 @@ class TestTicketClassifierAgent:
         assert 'requires_human_review' in metadata
         assert 'processing_time_seconds' in metadata
         
-        # Check AI characteristics are included
-        assert 'ai_characteristics' in metadata
-        assert isinstance(metadata['ai_characteristics'], dict)
-    
     @pytest.mark.asyncio
     async def test_get_statistics_with_data(self, agent_with_mock_classifier, sample_tickets):
         """Test getting statistics with processed tickets."""

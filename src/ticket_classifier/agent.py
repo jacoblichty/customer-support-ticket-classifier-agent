@@ -43,9 +43,6 @@ class TicketClassifierAgent:
             # Classify the ticket using Azure OpenAI
             classification_result = await self.classifier.classify_ticket(ticket)
             
-            # Analyze ticket characteristics using AI for enhanced reasoning
-            characteristics = await self._analyze_ticket_characteristics(ticket, classification_result)
-            
             # Update ticket with classification results
             ticket.category = classification_result["category"]
             ticket.confidence_score = classification_result["confidence_score"]
@@ -57,7 +54,6 @@ class TicketClassifierAgent:
             metadata_update = {
                 'processing_time_seconds': round(processing_time, 3),
                 'classification_method': 'azure_openai',
-                'ai_characteristics': characteristics,
                 'confidence_level': self._get_confidence_level(classification_result["confidence_score"]),
                 'requires_human_review': classification_result["confidence_score"] < 0.7
             }
@@ -84,114 +80,6 @@ class TicketClassifierAgent:
             
             self.processed_tickets.append(ticket)
             raise
-    
-    async def _analyze_ticket_characteristics(self, ticket: SupportTicket, classification: Dict) -> Dict:
-        """
-        Use AI to analyze ticket characteristics for enhanced insights.
-        
-        Args:
-            ticket: SupportTicket to analyze
-            classification: Classification result from the main classifier
-            
-        Returns:
-            Dictionary with analysis results and characteristics
-        """
-        analysis_prompt = f"""
-You are an AI assistant that analyzes customer support tickets to provide enhanced insights.
-
-Analyze this ticket and classification result, then provide a JSON response with the following structure:
-{{
-    "complexity_score": 0.0-1.0,
-    "urgency_indicators": ["list", "of", "urgency", "signals"],
-    "emotional_tone": "neutral|frustrated|angry|confused|polite",
-    "technical_level": "basic|intermediate|advanced",
-    "customer_intent": "clear description of what customer wants",
-    "suggested_response_approach": "empathetic|technical|procedural|escalation",
-    "key_issues": ["primary", "secondary", "issues"],
-    "resolution_complexity": "simple|moderate|complex"
-}}
-
-TICKET DETAILS:
-- ID: {ticket.ticket_id}
-- Priority: {ticket.priority}
-- Subject: {ticket.subject}
-- Content: {ticket.content}
-- Customer: {ticket.customer_email}
-
-CLASSIFICATION RESULT:
-- Category: {classification["category"]}
-- Confidence: {classification["confidence_score"]}
-- Reasoning: {classification["reasoning"]}
-
-Consider:
-1. Language complexity and technical terminology used
-2. Emotional indicators and urgency signals
-3. Clarity of the issue description
-4. Customer's apparent technical knowledge level
-5. Potential resolution complexity
-
-Respond with ONLY the JSON object, no additional text.
-"""
-
-        try:
-            # Check if we have a real OpenAI client
-            if not hasattr(self.classifier, 'client') or self.classifier.client is None:
-                # Return basic analysis if no OpenAI client available
-                return {
-                    "complexity_score": 0.5,
-                    "urgency_indicators": [],
-                    "emotional_tone": "neutral",
-                    "technical_level": "intermediate",
-                    "customer_intent": "Seeking assistance with their issue",
-                    "suggested_response_approach": "procedural",
-                    "key_issues": ["classification_issue"],
-                    "resolution_complexity": "moderate"
-                }
-            
-            # Use the classifier's OpenAI client for consistency
-            response = await self.classifier.client.chat.completions.create(
-                model=self.settings.openai_model,
-                messages=[
-                    {"role": "system", "content": "You are a ticket analysis expert. Respond only with valid JSON."},
-                    {"role": "user", "content": analysis_prompt}
-                ],
-                temperature=0.1,  # Low temperature for consistent analysis
-                max_tokens=400
-            )
-            
-            analysis_text = response.choices[0].message.content.strip()
-            analysis = json.loads(analysis_text)
-            
-            # Validate the response structure
-            required_keys = [
-                "complexity_score", "urgency_indicators", "emotional_tone",
-                "technical_level", "customer_intent", "suggested_response_approach",
-                "key_issues", "resolution_complexity"
-            ]
-            
-            for key in required_keys:
-                if key not in analysis:
-                    raise ValueError(f"Missing required key: {key}")
-            
-            logger.debug(f"AI analysis for {ticket.ticket_id}: {analysis['emotional_tone']} tone, "
-                        f"{analysis['technical_level']} technical level, "
-                        f"complexity: {analysis['complexity_score']}")
-            
-            return analysis
-            
-        except Exception as e:
-            logger.error(f"Error in AI ticket analysis: {e}")
-            # Return fallback analysis
-            return {
-                "complexity_score": 0.5,
-                "urgency_indicators": [],
-                "emotional_tone": "neutral",
-                "technical_level": "intermediate",
-                "customer_intent": "Seeking assistance with their issue",
-                "suggested_response_approach": "procedural",
-                "key_issues": ["analysis_error"],
-                "resolution_complexity": "moderate"
-            }
     
     def _get_confidence_level(self, confidence_score: float) -> str:
         """Convert confidence score to human-readable level."""

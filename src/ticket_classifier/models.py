@@ -116,7 +116,6 @@ class BatchTicketRequest(BaseModel):
 class BatchTicketResponse(BaseModel):
     """API response model for batch ticket processing."""
     processed_tickets: List[TicketResponse]
-    statistics: Dict
     processing_time_seconds: Optional[float] = None
 
     model_config = {
@@ -135,18 +134,6 @@ class BatchTicketResponse(BaseModel):
                         }
                     }
                 ],
-                "statistics": {
-                    "total_processed": 2,
-                    "category_distribution": {
-                        "account_management": 1,
-                        "billing_inquiry": 1
-                    },
-                    "average_confidence": 0.82,
-                    "confidence_distribution": {
-                        "very_high": 2
-                    },
-                    "human_review_rate": 0.0
-                },
                 "processing_time_seconds": 1.23
             }
         }

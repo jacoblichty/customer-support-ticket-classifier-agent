@@ -221,7 +221,6 @@ class TestAPIEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert len(data["processed_tickets"]) == 2
-        assert "statistics" in data
         assert "processing_time_seconds" in data
         # Check that processing details are included
         assert "processing_details" in data["processed_tickets"][0]
