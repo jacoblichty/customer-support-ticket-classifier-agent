@@ -123,25 +123,25 @@ def register_routes(app: FastAPI):
         )
 
     @app.post("/process", response_model=TicketResponse, tags=["Processing"])
-    async def process_ticket(ticket_request: TicketRequest):
-        """Process and classify a single support ticket with intelligent routing."""
+    async def process_ticket(request: TicketRequest):
+        """Process and classify a single support ticket with AI-powered classification."""
         if not agent:
             raise HTTPException(status_code=503, detail="Agent not initialized")
         
         try:
-            logger.info(f"Received processing request for ticket {ticket_request.ticket_id}")
+            logger.info(f"Received processing request for ticket {request.ticket_id}")
             
             # Convert request to ticket object
-            ticket = SupportTicket.from_request(ticket_request)
+            ticket = SupportTicket.from_request(request)
             
-            # Process the ticket with intelligent routing
+            # Process the ticket with AI classification
             processed_ticket = await agent.process_ticket(ticket)
             
             # Return response with processing details
             return processed_ticket.to_response()
             
         except Exception as e:
-            logger.error(f"Error processing ticket {ticket_request.ticket_id}: {e}")
+            logger.error(f"Error processing ticket {request.ticket_id}: {e}")
             raise HTTPException(
                 status_code=500, 
                 detail=f"Processing error: {str(e)}"
@@ -149,7 +149,7 @@ def register_routes(app: FastAPI):
 
     @app.post("/process/batch", response_model=BatchTicketResponse, tags=["Processing"])
     async def process_tickets_batch(batch_request: BatchTicketRequest):
-        """Process and classify multiple support tickets in batch with intelligent routing."""
+        """Process and classify multiple support tickets in batch with AI-powered classification."""
         if not agent:
             raise HTTPException(status_code=503, detail="Agent not initialized")
         
@@ -166,7 +166,7 @@ def register_routes(app: FastAPI):
             logger.info(f"Received batch processing request for {len(batch_request.tickets)} tickets")
             start_time = time.time()
             
-            # Process each ticket individually to get intelligent routing details
+            # Process each ticket individually to get classification details
             processed_tickets = []
             for req in batch_request.tickets:
                 ticket = SupportTicket.from_request(req)

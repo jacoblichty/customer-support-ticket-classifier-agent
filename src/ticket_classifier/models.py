@@ -29,25 +29,21 @@ class TicketRequest(BaseModel):
 
 
 class ProcessingDetails(BaseModel):
-    """Processing strategy and routing details."""
-    strategy_used: str = Field(..., description="Processing strategy that was used")
+    """Classification processing and analysis details."""
+    classification_method: str = Field(..., description="Method used for classification (e.g., 'azure_openai')")
     processing_time_seconds: float = Field(..., description="Time taken to process the ticket")
-    context_gathered: bool = Field(..., description="Whether additional context was gathered")
-    escalation_triggered: bool = Field(..., description="Whether human escalation was triggered")
-    auto_resolution_attempted: bool = Field(..., description="Whether auto-resolution was attempted")
-    follow_up_scheduled: bool = Field(..., description="Whether follow-up was scheduled")
-    human_review_recommended: bool = Field(..., description="Whether human review is recommended")
+    confidence_level: str = Field(..., description="Human-readable confidence level (very_low, low, moderate, high, very_high)")
+    requires_human_review: bool = Field(..., description="Whether human review is recommended based on confidence")
+    ai_analysis_performed: bool = Field(default=True, description="Whether AI-powered analysis was performed")
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "strategy_used": "fast_track",
+                "classification_method": "azure_openai",
                 "processing_time_seconds": 0.85,
-                "context_gathered": False,
-                "escalation_triggered": False,
-                "auto_resolution_attempted": True,
-                "follow_up_scheduled": False,
-                "human_review_recommended": False
+                "confidence_level": "high",
+                "requires_human_review": False,
+                "ai_analysis_performed": True
             }
         }
     }
@@ -81,13 +77,11 @@ class TicketResponse(BaseModel):
                 "created_at": "2025-11-11T10:30:00",
                 "processed_at": "2025-11-11T10:30:01",
                 "processing_details": {
-                    "strategy_used": "fast_track",
+                    "classification_method": "azure_openai",
                     "processing_time_seconds": 0.85,
-                    "context_gathered": False,
-                    "escalation_triggered": False,
-                    "auto_resolution_attempted": True,
-                    "follow_up_scheduled": False,
-                    "human_review_recommended": False
+                    "confidence_level": "very_high",
+                    "requires_human_review": False,
+                    "ai_analysis_performed": True
                 }
             }
         }
@@ -137,9 +131,11 @@ class BatchTicketResponse(BaseModel):
                         "category": "account_management",
                         "confidence_score": 0.85,
                         "processing_details": {
-                            "strategy_used": "fast_track",
+                            "classification_method": "azure_openai",
                             "processing_time_seconds": 0.85,
-                            "escalation_triggered": False
+                            "confidence_level": "very_high",
+                            "requires_human_review": False,
+                            "ai_analysis_performed": True
                         }
                     }
                 ],
@@ -150,9 +146,10 @@ class BatchTicketResponse(BaseModel):
                         "billing_inquiry": 1
                     },
                     "average_confidence": 0.82,
-                    "strategy_distribution": {
-                        "fast_track": 2
-                    }
+                    "confidence_distribution": {
+                        "very_high": 2
+                    },
+                    "human_review_rate": 0.0
                 },
                 "processing_time_seconds": 1.23
             }
@@ -209,13 +206,11 @@ class SupportTicket:
                 processing_time = (self.processed_at - self.created_at).total_seconds()
             
             processing_details = ProcessingDetails(
-                strategy_used=self.metadata.get('processing_strategy', 'unknown'),
+                classification_method=self.metadata.get('classification_method', 'azure_openai'),
                 processing_time_seconds=round(processing_time, 3),
-                context_gathered=self.metadata.get('context_gathered', False),
-                escalation_triggered=self.metadata.get('escalation_triggered', False),
-                auto_resolution_attempted=self.metadata.get('auto_resolution_attempted', False),
-                follow_up_scheduled=self.metadata.get('follow_up_scheduled', False),
-                human_review_recommended=self.metadata.get('escalation_triggered', False)  # Use escalation as proxy for human review
+                confidence_level=self.metadata.get('confidence_level', 'moderate'),
+                requires_human_review=self.metadata.get('requires_human_review', False),
+                ai_analysis_performed=self.metadata.get('ai_characteristics') is not None
             )
         
         return TicketResponse(

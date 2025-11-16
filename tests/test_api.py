@@ -129,13 +129,11 @@ class TestAPIEndpoints:
             "created_at": "2025-11-11T10:00:00",
             "processed_at": "2025-11-11T10:00:01",
             "processing_details": {
-                "strategy_used": "fast_track",
+                "classification_method": "azure_openai",
                 "processing_time_seconds": 0.85,
-                "context_gathered": False,
-                "escalation_triggered": False,
-                "auto_resolution_attempted": True,
-                "follow_up_scheduled": False,
-                "human_review_recommended": False
+                "confidence_level": "high",
+                "requires_human_review": False,
+                "ai_analysis_performed": True
             }
         }
         
@@ -161,7 +159,7 @@ class TestAPIEndpoints:
         assert data["ticket_id"] == "T001"
         assert data["category"] == "technical_issue"
         assert "processing_details" in data
-        assert data["processing_details"]["strategy_used"] == "fast_track"
+        assert data["processing_details"]["classification_method"] == "azure_openai"
     
 
     
@@ -183,13 +181,11 @@ class TestAPIEndpoints:
                 "created_at": "2025-11-11T10:00:00",
                 "processed_at": "2025-11-11T10:00:01",
                 "processing_details": {
-                    "strategy_used": "fast_track",
+                    "classification_method": "azure_openai",
                     "processing_time_seconds": 0.85,
-                    "context_gathered": False,
-                    "escalation_triggered": False,
-                    "auto_resolution_attempted": True,
-                    "follow_up_scheduled": False,
-                    "human_review_recommended": False
+                    "confidence_level": "high",
+                    "requires_human_review": False,
+                    "ai_analysis_performed": True
                 }
             }
         

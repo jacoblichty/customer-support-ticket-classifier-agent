@@ -40,10 +40,10 @@ def create_sample_tickets() -> list[SupportTicket]:
 
 
 async def run_demo():
-    """Run comprehensive demo showcasing intelligent agent capabilities."""
-    print("🧠 Customer Support Ticket Classifier - Intelligent Agent Demo")
+    """Run comprehensive demo showcasing classification agent capabilities."""
+    print("🎯 Customer Support Ticket Classifier - Classification Agent Demo")
     print("=" * 70)
-    print("This demo showcases intelligent routing and autonomous decision-making capabilities")
+    print("This demo showcases AI-powered ticket classification with confidence scoring")
     print()
     
     # Get settings and setup logging
@@ -53,7 +53,7 @@ async def run_demo():
         print(f"   • Environment: {getattr(settings, 'environment', 'default')}")
         print(f"   • Debug mode: {settings.debug}")
         print(f"   • Azure OpenAI: {'✅ Configured' if settings.azure_openai_api_key else '❌ Not configured'}")
-        print(f"   • Intelligent routing: ✅ Always enabled")
+        print(f"   • Classification focus: ✅ Always enabled")
     except Exception as e:
         print(f"⚠️  Configuration warning: {e}")
         print("   Using fallback settings...")
@@ -64,7 +64,7 @@ async def run_demo():
     # Initialize agent
     agent = TicketClassifierAgent(settings.azure_openai_api_key, settings.azure_openai_endpoint, settings)
     print(f"\n🤖 Agent initialized:")
-    print(f"   • Intelligent routing: ✅ Always active")
+    print(f"   • Classification focus: ✅ Always active")
     print(f"   • OpenAI client: {'✅ Ready' if agent.classifier.client else '❌ Not available'}")
     print(f"   • Azure OpenAI deployment: {settings.azure_openai_deployment_name}")
     
@@ -72,8 +72,8 @@ async def run_demo():
     sample_tickets = create_comprehensive_sample_tickets()
     print(f"\n📋 Created {len(sample_tickets)} sample tickets showcasing different scenarios")
     
-    # Process tickets with intelligent routing
-    print("\n🔄 Processing tickets with intelligent routing...")
+    # Process tickets with classification focus
+    print("\n🔄 Processing tickets with AI classification...")
     print("=" * 70)
     
     processed_tickets = []
@@ -92,22 +92,19 @@ async def run_demo():
         
         processed_tickets.append(processed_ticket)
         
-        # Display intelligent processing results
-        print(f"   🤖 Strategy: {processed_ticket.metadata.get('processing_strategy', 'N/A')}")
+        # Display classification results
+        print(f"   🎯 Method: {processed_ticket.metadata.get('classification_method', 'AI Classification')}")
         print(f"   ✅ Category: {processed_ticket.category}")
         print(f"   📊 Confidence: {processed_ticket.confidence_score:.3f}")
         print(f"   ⏱️  Processing Time: {processing_time:.2f}s")
-        print(f"   🚨 Escalated: {'Yes' if processed_ticket.metadata.get('escalation_triggered') else 'No'}")
-        if processed_ticket.metadata.get('auto_resolution_attempted'):
-            print(f"   🔧 Auto-resolution attempted")
-        if processed_ticket.metadata.get('follow_up_scheduled'):
-            print(f"   📅 Follow-up scheduled")
+        print(f"   � Human Review: {'Yes' if processed_ticket.metadata.get('requires_human_review') else 'No'}")
+        print(f"   🤖 AI Analysis: {'Yes' if processed_ticket.metadata.get('ai_analysis_performed') else 'No'}")
         print(f"   💭 Reasoning: {processed_ticket.reasoning[:120]}...")
     
     total_processing_time = asyncio.get_event_loop().time() - total_start_time
     
     # Show comprehensive statistics
-    print(f"\n📊 Intelligent Processing Summary:")
+    print(f"\n📊 Classification Processing Summary:")
     print("=" * 70)
     
     stats = agent.get_statistics()
@@ -116,57 +113,51 @@ async def run_demo():
     print(f"   • Total Processing Time: {total_processing_time:.2f}s")
     print(f"   • Average Time per Ticket: {total_processing_time/len(processed_tickets):.2f}s")
     print(f"   • Average Confidence: {stats['average_confidence']:.3f}")
-    print(f"   • Intelligent Processing Rate: {stats.get('intelligent_processing_rate', 1.0):.1%}")
-    
-    print(f"\n🎯 Strategy Distribution:")
-    strategy_dist = stats.get('strategy_distribution', {})
-    for strategy, count in strategy_dist.items():
-        percentage = (count / len(processed_tickets)) * 100
-        print(f"   • {strategy.replace('_', ' ').title()}: {count} times ({percentage:.1f}%)")
+    print(f"   • Human Review Rate: {stats.get('human_review_rate', 0.0):.1%}")
     
     print(f"\n📋 Category Distribution:")
     for category, count in stats['category_distribution'].items():
         percentage = (count / len(processed_tickets)) * 100
         print(f"   • {category.replace('_', ' ').title()}: {count} times ({percentage:.1f}%)")
     
-    if stats.get('escalations_triggered', 0) > 0:
-        print(f"\n🚨 Escalation Summary:")
-        print(f"   • Total Escalations: {stats['escalations_triggered']}")
-        print(f"   • Escalation Rate: {(stats['escalations_triggered']/len(processed_tickets)):.1%}")
+    print(f"\n🎯 Confidence Distribution:")
+    confidence_dist = stats.get('confidence_distribution', {})
+    for level, count in confidence_dist.items():
+        percentage = (count / len(processed_tickets)) * 100
+        print(f"   • {level.replace('_', ' ').title()}: {count} times ({percentage:.1f}%)")
     
-    # Show decision insights
-    insights = agent.get_decision_insights()
-    if insights['total_decisions'] > 0:
-        print(f"\n🧠 Intelligent Decision Insights:")
-        print(f"   • Decision History Size: {insights['total_decisions']}")
-        print(f"   • Human Review Rate: {insights['human_review_rate']:.1%}")
-        print(f"   • Most Used Strategy: {insights.get('most_used_strategy', 'N/A').replace('_', ' ').title()}")
+    # Show classification insights
+    insights = agent.get_classification_insights()
+    if insights['total_classifications'] > 0:
+        print(f"\n🎯 Classification Insights:")
+        print(f"   • Total Classifications: {insights['total_classifications']}")
+        print(f"   • Average Confidence: {insights['average_confidence']:.3f}")
+        print(f"   • Low Confidence Rate: {insights['low_confidence_rate']:.1%}")
         
-        if insights['strategy_effectiveness']:
-            print(f"\n⚡ Strategy Effectiveness:")
-            for strategy, effectiveness in insights['strategy_effectiveness'].items():
-                print(f"   • {strategy.replace('_', ' ').title()}: "
-                      f"{effectiveness['count']} uses, "
-                      f"avg confidence {effectiveness['avg_confidence']:.3f}, "
-                      f"avg time {effectiveness['avg_time']:.1f}s")
+        if insights['category_performance']:
+            print(f"\n📊 Category Performance:")
+            for category, performance in insights['category_performance'].items():
+                print(f"   • {category.replace('_', ' ').title()}: "
+                      f"{performance['count']} tickets, "
+                      f"avg confidence {performance['avg_confidence']:.3f}")
     
     # Show health status
     health = agent.get_health_status()
     print(f"\n🏥 System Health:")
     print(f"   • Status: {health['status'].title()}")
     print(f"   • Uptime: {health['uptime_seconds']:.1f} seconds")
-    print(f"   • Strategies Available: {len(health['intelligent_settings']['strategies_available'])}")
+    print(f"   • OpenAI Available: {'Yes' if health['openai_available'] else 'No'}")
     
-    print(f"\n✨ Key Intelligent Features Demonstrated:")
-    print(f"   • Autonomous strategy selection based on ticket analysis")
-    print(f"   • Context-aware processing decisions")
-    print(f"   • Dynamic confidence threshold management")
-    print(f"   • Smart human escalation routing")
-    print(f"   • Adaptive post-processing decisions")
-    print(f"   • Continuous learning from outcomes")
+    print(f"\n✨ Key Classification Features Demonstrated:")
+    print(f"   • AI-powered ticket category classification")
+    print(f"   • Confidence scoring and reasoning")
+    print(f"   • Human review recommendations")
+    print(f"   • Batch processing capabilities")
+    print(f"   • Comprehensive analytics and insights")
+    print(f"   • Robust health monitoring")
     
     print(f"\n🎉 Demo completed successfully!")
-    print(f"    The agent processed all tickets using intelligent routing!")
+    print(f"    The agent classified all tickets with confidence scoring!")
 
 
 def create_comprehensive_sample_tickets() -> list[SupportTicket]:

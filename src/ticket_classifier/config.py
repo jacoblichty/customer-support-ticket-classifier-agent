@@ -58,17 +58,9 @@ class Settings(BaseSettings):
     cors_methods: List[str] = Field(default=["*"])
     cors_headers: List[str] = Field(default=["*"])
     
-    # Intelligent Agent Configuration (always enabled)
-    intelligent_agent_learning: bool = Field(default=True)
-    max_context_gathering_time: int = Field(default=30)  # seconds
-    intelligent_confidence_threshold: float = Field(default=0.8)
-    
     # Monitoring
     enable_metrics: bool = Field(default=True)
     metrics_path: str = Field(default="/metrics")
-    
-    # Database (for future use)
-    database_url: Optional[str] = Field(default=None)
     
     # Ticket Categories
     ticket_categories: List[str] = Field(
