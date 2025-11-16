@@ -98,7 +98,6 @@ async def run_demo():
         print(f"   📊 Confidence: {processed_ticket.confidence_score:.3f}")
         print(f"   ⏱️  Processing Time: {processing_time:.2f}s")
         print(f"   � Human Review: {'Yes' if processed_ticket.metadata.get('requires_human_review') else 'No'}")
-        print(f"   🤖 AI Analysis: {'Yes' if processed_ticket.metadata.get('ai_analysis_performed') else 'No'}")
         print(f"   💭 Reasoning: {processed_ticket.reasoning[:120]}...")
     
     total_processing_time = asyncio.get_event_loop().time() - total_start_time

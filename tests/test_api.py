@@ -132,8 +132,7 @@ class TestAPIEndpoints:
                 "classification_method": "azure_openai",
                 "processing_time_seconds": 0.85,
                 "confidence_level": "high",
-                "requires_human_review": False,
-                "ai_analysis_performed": True
+                "requires_human_review": False
             }
         }
         
@@ -184,8 +183,7 @@ class TestAPIEndpoints:
                     "classification_method": "azure_openai",
                     "processing_time_seconds": 0.85,
                     "confidence_level": "high",
-                    "requires_human_review": False,
-                    "ai_analysis_performed": True
+                    "requires_human_review": False
                 }
             }
         

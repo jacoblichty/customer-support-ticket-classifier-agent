@@ -34,7 +34,6 @@ class ProcessingDetails(BaseModel):
     processing_time_seconds: float = Field(..., description="Time taken to process the ticket")
     confidence_level: str = Field(..., description="Human-readable confidence level (very_low, low, moderate, high, very_high)")
     requires_human_review: bool = Field(..., description="Whether human review is recommended based on confidence")
-    ai_analysis_performed: bool = Field(default=True, description="Whether AI-powered analysis was performed")
 
     model_config = {
         "json_schema_extra": {
@@ -42,8 +41,7 @@ class ProcessingDetails(BaseModel):
                 "classification_method": "azure_openai",
                 "processing_time_seconds": 0.85,
                 "confidence_level": "high",
-                "requires_human_review": False,
-                "ai_analysis_performed": True
+                "requires_human_review": False
             }
         }
     }
@@ -80,8 +78,7 @@ class TicketResponse(BaseModel):
                     "classification_method": "azure_openai",
                     "processing_time_seconds": 0.85,
                     "confidence_level": "very_high",
-                    "requires_human_review": False,
-                    "ai_analysis_performed": True
+                    "requires_human_review": False
                 }
             }
         }
@@ -134,8 +131,7 @@ class BatchTicketResponse(BaseModel):
                             "classification_method": "azure_openai",
                             "processing_time_seconds": 0.85,
                             "confidence_level": "very_high",
-                            "requires_human_review": False,
-                            "ai_analysis_performed": True
+                            "requires_human_review": False
                         }
                     }
                 ],
@@ -209,8 +205,7 @@ class SupportTicket:
                 classification_method=self.metadata.get('classification_method', 'azure_openai'),
                 processing_time_seconds=round(processing_time, 3),
                 confidence_level=self.metadata.get('confidence_level', 'moderate'),
-                requires_human_review=self.metadata.get('requires_human_review', False),
-                ai_analysis_performed=self.metadata.get('ai_characteristics') is not None
+                requires_human_review=self.metadata.get('requires_human_review', False)
             )
         
         return TicketResponse(
