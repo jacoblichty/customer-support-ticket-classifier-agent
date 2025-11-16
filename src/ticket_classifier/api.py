@@ -260,7 +260,7 @@ def run_server(settings=None):
         "ticket_classifier.api:app",
         host=settings.host,
         port=settings.port,
-        workers=1,  # Always use 1 worker for development
+        workers=settings.workers,
         reload=False,  # Disable reload to avoid log spam
         log_level=settings.log_level.lower()
     )
